@@ -6,19 +6,17 @@
 //
 
 import UIKit
+import RealmSwift
 
 class TodoTableView: UITableView {
     
     private let identifierCell = "cell"
-    
-    public var todoList: [String] = ["first","second", "third"]
+    public var tasks: Results<TaskModel>!
     
     override init(frame: CGRect, style: UITableView.Style) {
         
         super.init(frame: frame, style: .grouped)
         self.register(UITableViewCell.self, forCellReuseIdentifier: identifierCell)
-        
-        
         config()
         self.delegate = self
         self.dataSource = self
@@ -30,12 +28,10 @@ class TodoTableView: UITableView {
     
     private func config(){
         self.backgroundColor = .white
-        self.separatorInset = .init(top: 0, left: 20, bottom: 0, right: 20)
+        self.separatorInset = .init(top: 0, left: 0, bottom: 0, right: 0)
     }
     
 }
-
-
 
 extension TodoTableView : UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -43,11 +39,13 @@ extension TodoTableView : UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        
+        let taskItem = tasks[indexPath.row]
         let deleteAction = UIContextualAction(style: .destructive, title: "delete") { action, view, handler in
-
-            print(handler)
-            self.todoList.remove(at: indexPath.item)
-            self.reloadData()
+            try! RealmManager.shared.realm.write {
+                RealmManager.shared.realm.delete(taskItem)
+                self.reloadData()
+            }
         }
         deleteAction.backgroundColor = .red
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
@@ -57,12 +55,13 @@ extension TodoTableView : UITableViewDelegate {
 
 extension TodoTableView : UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        todoList.count
+        return tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: identifierCell, for: indexPath)
-        cell.textLabel?.text = todoList[indexPath.row]
+        let task = tasks[indexPath.row].task
+        cell.textLabel?.text = task
         return cell
     }
 }

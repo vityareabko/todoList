@@ -10,7 +10,7 @@ import UIKit
 class MainViewController: UIViewController {
     
     private let tableView = TodoTableView()
-    
+    private let taskModel = TaskModel()
     
     private lazy var addTask: UIButton = {
         let button = UIButton(type: .system)
@@ -33,6 +33,9 @@ class MainViewController: UIViewController {
 //        tableView.countTodoTask = todoList
         
         setupUI()
+        tableView.tasks = RealmManager.shared.realm.objects(TaskModel.self)
+        print(tableView.tasks)
+        
     }
 
     private func setupUI() {
@@ -69,8 +72,12 @@ class MainViewController: UIViewController {
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] action in
             guard let newTask = alertTextField.text, !newTask.isEmpty else { return }
-            self?.tableView.todoList.append(newTask)
-            self?.tableView.insertRows(at: [IndexPath.init(row: self!.tableView.todoList.count - 1, section: 0)], with: .automatic)
+            let taskModel = TaskModel() // создаем новый экземпляр бд
+            taskModel.task = newTask // заполняем поля бд
+            RealmManager.shared.saveTaskModel(model: taskModel) // мохраняем запись(экземпляр) в бд через синглтон
+                
+            self?.tableView.insertRows(at: [IndexPath.init(row: self!.tableView.tasks.count - 1, section: 0)], with: .automatic) // обновляем таблицу
+
         }
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
